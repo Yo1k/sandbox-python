@@ -1,9 +1,10 @@
-import psycopg2
+from collections.abc import Sequence, MutableSequence
+from typing import Any
+import psycopg2  # type: ignore
 from psycopg2 import sql
-# from psycopg2._psycopg import connection
 
 
-def full_table_query(schema_name: str = "cd", table_name: str = "members") -> tuple:
+def get_full_table(*table_name_parts: str) -> MutableSequence[Sequence[Any]]:
     """Fetch a whole table from `exercises` database and return tuple of all records."""
     conn = psycopg2.connect(
             dbname="exercises",
@@ -11,15 +12,14 @@ def full_table_query(schema_name: str = "cd", table_name: str = "members") -> tu
             host="127.0.0.1")
     with conn:
         with conn.cursor() as cur:
-            cur.execute(sql.SQL("SELECT * FROM {0}.{1};").format(
-                    sql.Identifier(schema_name),
-                    sql.Identifier(table_name)))
-            record: tuple = cur.fetchone()
+            cur.execute(sql.SQL("SELECT * FROM {0};").format(
+                    sql.Identifier(*table_name_parts)))
+            records: MutableSequence[Sequence[Any]] = cur.fetchall()
     conn.close()
-    return record
+    return records
 
 
-def top_revenue_query() -> tuple:
+def top_revenue_query(rank: int = 3) -> MutableSequence[Sequence[Any]]:
     """Finds the top three revenue generating facilities (question from `Aggregates` exercises).
 
     Produces a list of the top three revenue generating facilities (including ties). Output
@@ -52,25 +52,27 @@ def top_revenue_query() -> tuple:
                             facs.name
                         ) as facs_rev
                     WHERE
-                        rank <= 3  -- SKTODO prepared statement
+                        rank <= %(rank)s
                     ORDER BY
                         rank;
-                    """)
-            records = cur.fetchall()
+                    """,
+                    {"rank": rank}
+            )
+            records: MutableSequence[Sequence[Any]] = cur.fetchall()
     conn.close()
     return records
 
 
-def record_types(rec):
-    for i in rec:
+def print_value_type(records: MutableSequence[Sequence[Any]]) -> None:
+    for i in records[0]:
         print(f"{i}: {type(i)}")
 
 
-def show_table(records):
+def print_table(records: MutableSequence[Sequence[Any]]) -> None:
     for rec in records:
         print(rec)
 
 
 if __name__ == "__main__":
-    record_types(full_table_query(table_name="facilities"))
-    show_table(top_revenue_query())
+    print_value_type(get_full_table("cd", "facilities"))
+    print_table(top_revenue_query())

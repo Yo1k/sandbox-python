@@ -5,7 +5,7 @@ from psycopg2 import sql
 
 
 def get_full_table(*table_name_parts: str) -> MutableSequence[Sequence[Any]]:
-    """Fetch a whole table from `exercises` database and return tuple of all records."""
+    """Fetches a whole table from `exercises` database and returns list of all records."""
     conn = psycopg2.connect(
             dbname="exercises",
             user="postgres",
@@ -20,10 +20,11 @@ def get_full_table(*table_name_parts: str) -> MutableSequence[Sequence[Any]]:
 
 
 def top_revenue_query(rank: int = 3) -> MutableSequence[Sequence[Any]]:
-    """Finds the top three revenue generating facilities (question from `Aggregates` exercises).
+    """Finds the top three revenue generating facilities.
 
-    Produces a list of the top three revenue generating facilities (including ties). Output
-    facility name and rank, sorted by rank and facility name.
+    Produces a list of the top three revenue generating facilities (including ties). Outputs
+    facility name and rank, sorted by rank and facility name (question from
+    https://www.pgexercises.com/questions/aggregates/facrev3.html).
      """
     conn = psycopg2.connect(
             dbname="exercises",
@@ -33,31 +34,31 @@ def top_revenue_query(rank: int = 3) -> MutableSequence[Sequence[Any]]:
         with conn.cursor() as cur:
             cur.execute(
                     """
-                    SELECT
-                        name,
-                        rank
-                    FROM (
+                    PREPARE rnkplan (int) AS
                         SELECT
-                            facs.name AS name,
-                            rank() OVER (ORDER BY SUM(bks.slots * CASE
-                                    WHEN bks.memid = 0 THEN facs.guestcost
-                                    ELSE facs.membercost
-                                END) DESC
-                                ) AS rank
-                        FROM
-                            cd.bookings bks
-                            INNER JOIN cd.facilities facs
-                                ON bks.facid = facs.facid
-                        GROUP BY
-                            facs.name
-                        ) as facs_rev
-                    WHERE
-                        rank <= %(rank)s
-                    ORDER BY
-                        rank;
-                    """,
-                    {"rank": rank}
-            )
+                            name,
+                            rank
+                        FROM (
+                            SELECT
+                                facs.name AS name,
+                                rank() OVER (ORDER BY SUM(bks.slots * CASE
+                                        WHEN bks.memid = 0 THEN facs.guestcost
+                                        ELSE facs.membercost
+                                    END) DESC
+                                    ) AS rank
+                            FROM
+                                cd.bookings bks
+                                INNER JOIN cd.facilities facs
+                                    ON bks.facid = facs.facid
+                            GROUP BY
+                                facs.name
+                            ) as facs_rev
+                        WHERE
+                            rank <= $1
+                        ORDER BY
+                            rank;
+                    """)
+            cur.execute("EXECUTE rnkplan(%(rank)s)", {"rank": rank})
             records: MutableSequence[Sequence[Any]] = cur.fetchall()
     conn.close()
     return records

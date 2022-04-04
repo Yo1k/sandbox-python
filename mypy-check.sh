@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Uses Mypy to check static types of the code.
+# Uses Mypy to check static types in the code.
 
 set -eu
 

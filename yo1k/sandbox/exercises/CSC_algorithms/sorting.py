@@ -43,7 +43,7 @@ def replace_subseq(
         begin_subseq: int,
         end_subseq: int,
         tmp_seq: MutableSequence[Any]) -> None:
-    """Replaces a subsequence in the `seq` by elements from the beginning of the `tmp_seq`."""
+    """Replaces a subsequence in the `seq` with elements from the beginning of the `tmp_seq`."""
     l_idx = begin_subseq
     for i in range(end_subseq - begin_subseq + 1):
         assert l_idx <= end_subseq
@@ -61,11 +61,11 @@ def merge_sorted_seqs(
     """Merges two sorted seqs in ascending order."""
     l_seq_idx: int = l_begin_seq
     r_seq_idx: int = r_begin_seq
-    l_seq_len: int = l_end_seq - l_begin_seq + 1
-    r_seq_len: int = r_end_seq - r_begin_seq + 1
+    l_seq_size: int = l_end_seq - l_begin_seq + 1
+    r_seq_size: int = r_end_seq - r_begin_seq + 1
     tmp_seq_idx = 0
 
-    while l_seq_idx - l_begin_seq < l_seq_len and r_seq_idx - r_begin_seq < r_seq_len:
+    while l_seq_idx - l_begin_seq < l_seq_size and r_seq_idx - r_begin_seq < r_seq_size:
         if seq[l_seq_idx] <= seq[r_seq_idx]:
             tmp_seq[tmp_seq_idx] = seq[l_seq_idx]
             tmp_seq_idx += 1
@@ -74,11 +74,11 @@ def merge_sorted_seqs(
             tmp_seq[tmp_seq_idx] = seq[r_seq_idx]
             tmp_seq_idx += 1
             r_seq_idx += 1
-    while l_seq_idx - l_begin_seq < l_seq_len:
+    while l_seq_idx - l_begin_seq < l_seq_size:
         tmp_seq[tmp_seq_idx] = seq[l_seq_idx]
         tmp_seq_idx += 1
         l_seq_idx += 1
-    while r_seq_idx - r_begin_seq < r_seq_len:
+    while r_seq_idx - r_begin_seq < r_seq_size:
         tmp_seq[tmp_seq_idx] = seq[r_seq_idx]
         tmp_seq_idx += 1
         r_seq_idx += 1
@@ -92,19 +92,19 @@ def merge_sort(seq: MutableSequence[Any]) -> MutableSequence[Any]:
     This algorithm has complexity O(n*log(n)).
     """
     size = len(seq)
-    tmp_seq = [None for _ in range(size)]
-    if size == 0:
+    if size == 0 or size == 1:
         return seq
+    tmp_seq = [None for _ in range(size)]
 
     def _merge_sort(_seq: MutableSequence[Any], begin: int, end: int) -> MutableSequence[Any]:
-        delimetr_idx = (end - begin) // 2
+        if end - begin == 0:
+            return _seq
+        median_idx = (end - begin) // 2
         l_seq_begin = begin
-        l_seq_end = l_seq_begin + delimetr_idx
+        l_seq_end = l_seq_begin + median_idx
         r_seq_begin = l_seq_end + 1
         r_seq_end = end
 
-        if r_seq_end - l_seq_begin == 0:
-            return _seq
         # sort left subseq
         _merge_sort(_seq, begin=l_seq_begin, end=l_seq_end)
         # sort right subseq
